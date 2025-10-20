@@ -239,7 +239,6 @@ fi
 localfile="${basedir}/local.yml"
 if [ -f "${localfile}" ]
 then
-  echo "Including local options from ${localfile}"
   dockercompose="${dockercompose} -f ${localfile}"
 fi
 
