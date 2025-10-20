@@ -1,0 +1,17 @@
+services:
+  cron:
+    depends_on:
+      - webserver
+    image: busybox
+    command:
+      - sh
+      - "-c"
+      - |
+        sleep 10
+        while true; do
+          printf "Client Time: "
+          date -R
+          wget -q -O- --header "Host: ${MOODLE_DOCKER_WEB_PORT}" "http://webserver/admin/cron.php"
+          sleep 30
+          printf "\n"
+        done

@@ -240,6 +240,9 @@ if [[ "$(uname)" == "Darwin" ]]; then
     dockercompose="${dockercompose} -f ${basedir}/volumes-cached.yml"
 fi
 
+# Cron client.
+dockercompose="${dockercompose} -f ${basedir}/cron.yml"
+
 # Apply local customisations if a local.yml is found.
 # Note: This must be the final modification before the docker-compose command is called.
 localfile="${basedir}/local.yml"
