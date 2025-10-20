@@ -248,4 +248,13 @@ then
   dockercompose="${dockercompose} -f ${localfile}"
 fi
 
-$dockercompose "$@"
+if [[ -n "$MOODLE_DOCKER_DRY_RUN" ]]; then
+    printf "If MOODLE_DOCKER_DRY_RUN weren't set, I'd run the following command:\n"
+    printf "\t%s" "$dockercompose"
+    printf " %q" "$@"
+    printf "\nwith the following environment variables: (Excluding irrelevant ones.)\n"
+    env | awk '/^MOODLE_DOCKER_|^ASSETDIR/ {print "\t" $0}'
+else
+    $dockercompose "$@"
+fi
+
