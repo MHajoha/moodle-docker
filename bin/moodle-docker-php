@@ -1,0 +1,67 @@
+#!/bin/bash
+set -o nounset -o errexit -o errtrace -o pipefail
+
+readonly PROG="$(basename "$0")"
+
+: "${MOODLE_DOCKER_BASE:="$(realpath "$(dirname "$0")/..")"}"
+
+log() {
+    echo "[$PROG] $*" >&2
+}
+
+replace_input() {
+    local string="$1"
+
+    string="${string//localhost/host.docker.internal}"
+    string="${string//127.0.0.1/172.17.0.1}"
+
+    string="${string//"$MOODLE_DOCKER_WWWROOT"//var/www/html}"
+
+    echo -n "$string"
+}
+
+replace_output() {
+    local line
+    while IFS= read -rs line; do
+        line="${line//"/var/www/html"/$MOODLE_DOCKER_WWWROOT}"
+        if [ -n "$line" ]; then
+            printf "%s\n" "$line"
+        fi
+    done
+
+    if [ -n "$line" ]; then
+        printf "%s" "$line"
+    fi
+}
+
+if [ -f "/tmp/mdc-php-debug" ]; then
+    touch /tmp/mdc-php.log
+    exec 2>>/tmp/mdc-php.log
+    log Command line: "$@"
+    env >&2
+    set -x
+fi
+
+if [ -f "$MOODLE_DOCKER_BASE/.env" ]; then
+    set -o allexport
+    . "$MOODLE_DOCKER_BASE/.env"
+    set +o allexport
+fi
+
+: ${MOODLE_DOCKER_WWWROOT:?}
+
+MOODLE_DOCKER_ARGS="$(replace_input "${MOODLE_DOCKER_ARGS:-}")"
+
+for arg in "$@"; do
+    if [ "$arg" == "/tmp/ide-phpinfo.php" ]; then
+        # PhpStorm / IDEA runs this script to check the interpreter.
+        log Copying /tmp/ide-phpinfo.php to webserver container.
+        "$MOODLE_DOCKER_BASE/bin/moodle-docker-compose" cp /tmp/ide-phpinfo.php webserver:/tmp/ide-phpinfo.php &>/dev/null
+    fi
+
+    php_args+=("$(replace_input "$arg")")
+done
+
+log New command line: php ${php_args[*]}
+"$MOODLE_DOCKER_BASE/bin/moodle-docker-compose" exec $MOODLE_DOCKER_ARGS webserver php "${php_args[@]}" > >(replace_output) 2> >(replace_output >&2)
+
