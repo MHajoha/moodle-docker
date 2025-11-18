@@ -12,6 +12,27 @@ This repository contains Docker configuration aimed at Moodle developers and tes
 * Zero-configuration approach
 * Backed by [automated tests](https://travis-ci.com/moodlehq/moodle-docker/branches)
 
+### 🍴 Dem Max sein Fork 🍴
+
+- Automagically reads a `.env` file in the moodle-docker direcory.
+
+- Calls [`cron.php`](https://docs.moodle.org/501/en/Cron) every 30 seconds.
+
+- `mdc php` (`moodle-docker-php`) runs PHP in the webserver container while rewriting paths in input and output. That makes it look more similar to a PHP command on the host. 
+
+  You can even tell PhpStorm that `moodle-docker-php` is your PHP interpreter, and it'll happily run PHPUnit and understand its output.
+
+- Adds a shortcut script `mdc` to save your tired fingers some typing:
+  - **`mdc php`** &rarr; `moodle-docker-php`
+  - **`mdc psql`** &rarr; `moodle-docker-compose exec -it db psql -U moodle $@`
+  - **`mdc install`** &rarr; `mdc php admin/cli/install_database.php ...`
+  - **`mdc xdebug`** &rarr; Xdebug setup as per WIKI
+  - **`mdc <anything else>`** just delegates to `moodle-docker-compose`.
+
+- Set `MOODLE_DOCKER_DRY_RUN=1` to print what the script _would have_ done. Useful for [configuring a remote interpreter in PhpStorm](https://www.jetbrains.com/help/phpstorm/configuring-remote-interpreters.html#remote-interpreter-docker-compose).
+
+- Removes that nagging message about `local.yml` being included every time.
+
 ## Prerequisites
 * [Docker](https://docs.docker.com) and [Docker Compose](https://docs.docker.com/compose/cli-command/#installing-compose-v2) installed if your Docker CLI version does not support `docker compose` command.
 * It's recommended to always run the latest versions of each, but at the minimum Docker v20.10.15 and Docker Compose v2.5.0 should be used.
