@@ -1,21 +1,23 @@
 #!/bin/bash
 set -o nounset -o errexit -o errtrace -o pipefail
 
-export MOODLE_DOCKER_BASE="$(realpath "$(dirname "$0")/..")"
-export PATH="$MOODLE_DOCKER_BASE/bin:$PATH"
+MOODLE_DOCKER_BASE="$(realpath "$(dirname "$0")/..")"
+PATH="$MOODLE_DOCKER_BASE/bin:$PATH"
+export MOODLE_DOCKER_BASE PATH
 
 if [[ -f "$MOODLE_DOCKER_BASE/.env" ]]; then
 	set -o allexport
+    # shellcheck disable=SC1091
 	. "$MOODLE_DOCKER_BASE/.env"
 	set +o allexport
 fi
 
 install_xdebug() {
-	local bash_args="-o nounset -o errexit -o errtrace"
+	local bash_args=(-o nounset -o errexit -o errtrace)
 	# Pass shell debug option from host to container.
-	test -o xtrace && bash_args="$bash_args -x" || true
+	test -o xtrace && bash_args+=(-x) || true
 
-	mdc exec -T webserver bash $bash_args <<EOF1
+	mdc exec -T webserver bash "${bash_args[@]}" <<EOF1
 pecl shell-test xdebug || pecl install xdebug
 
 mkdir -p /usr/local/etc/php/conf.d
