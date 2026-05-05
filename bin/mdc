@@ -49,6 +49,10 @@ case "${1:-}" in
 	shift
 	exec "$0" exec -it db psql -U moodle "$@"
 	;;
+    shell)
+	shift
+	exec "$0" exec --user www-data -it webserver bash
+	;;
     php)
 	shift
 	exec moodle-docker-php "$@"
