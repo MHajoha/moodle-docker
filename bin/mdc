@@ -5,11 +5,33 @@ MOODLE_DOCKER_BASE="$(realpath "$(dirname "$0")/..")"
 PATH="$MOODLE_DOCKER_BASE/bin:$PATH"
 export MOODLE_DOCKER_BASE PATH
 
-if [[ -f "$MOODLE_DOCKER_BASE/.env" ]]; then
-	set -o allexport
-    # shellcheck disable=SC1091
-	. "$MOODLE_DOCKER_BASE/.env"
-	set +o allexport
+read_dotenv() {
+	if [[ -f "$1" ]]; then
+		set -o allexport
+		# shellcheck disable=SC1090
+		. "$1"
+		set +o allexport
+	elif [[ "${2:-}" == "require" ]]; then
+		echo "mdc: missing required config file: $1" >&2
+		exit 1
+	fi
+}
+
+if [[ "${1:-}" == "-i" ]]; then
+	MOODLE_DOCKER_INSTANCE="$2"
+	shift 2
+fi
+
+read_dotenv "$MOODLE_DOCKER_BASE/config/common.env"
+
+# shellcheck disable=SC2153
+if declare -p MOODLE_DOCKER_INSTANCES >/dev/null 2>&1; then
+	: "${MOODLE_DOCKER_INSTANCE:="$MOODLE_DOCKER_DEFAULT_INSTANCE"}"
+	: "${MOODLE_DOCKER_INSTANCE:?}"
+	read_dotenv "$MOODLE_DOCKER_BASE/config/$MOODLE_DOCKER_INSTANCE.env" require
+
+	: "${COMPOSE_PROJECT_NAME:="$MOODLE_DOCKER_INSTANCE"}"
+	export COMPOSE_PROJECT_NAME
 fi
 
 install_xdebug() {
