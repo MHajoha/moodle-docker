@@ -256,7 +256,7 @@ if [[ -n "$MOODLE_DOCKER_DRY_RUN" ]]; then
     printf "\t%s" "$dockercompose"
     printf " %q" "$@"
     printf "\nwith the following environment variables: (Excluding irrelevant ones.)\n"
-    env | awk '/^MOODLE_DOCKER_|^ASSETDIR/ {print "\t" $0}'
+    env | awk '/^MOODLE_DOCKER_|^ASSETDIR=|^COMPOSE_/ && !/^MOODLE_DOCKER_DRY_RUN=/ {print "\t" $0}'
 else
     $dockercompose "$@"
 fi
