@@ -61,6 +61,49 @@ install_moodle_db() {
 		--adminpass=admin --adminemail=a@b.c \
 		--supportemail=a@b.c \
 		--fullname="Moodle-Docker" --shortname="moodle-docker"
+
+	if [ -z "${MOODLE_DOCKER_LANGS:-}" ]; then
+		return
+	fi
+	if [ -z "${MOODLE_DOCKER_LANG_REPO:-}" ]; then
+		echo "MOODLE_DOCKER_LANG_REPO is unset, not installing language packs." >&2
+		return
+	fi
+
+	# Install requested language packs.
+	local lang
+	for lang in $MOODLE_DOCKER_LANGS; do
+		install_lang "$lang"
+	done
+}
+
+install_lang() {
+	if [ $# -ne 1 ]; then
+		echo "usage: $(basename "$0") install-lang LANGUAGE_CODE" >&2
+		return 1
+	fi
+
+	local lang="$1"
+
+	local lang_pack_url="$MOODLE_DOCKER_LANG_REPO/$lang.zip"
+	echo "Installing '$lang_pack_url'..." >&2
+
+	mdc exec --user www-data -T webserver bash <<EOF
+set -o nounset -o errexit
+
+curl --fail --silent --show-error '$lang_pack_url' > "/tmp/$lang.zip"
+
+mkdir -p /var/www/moodledata/lang
+# Remove previously installed version, if any.
+rm -rf "/var/www/moodledata/lang/$lang"
+# Install the pack.
+unzip -qd /var/www/moodledata/lang "/tmp/$lang.zip"
+# Clean up.
+rm -f "/tmp/$lang.zip"
+
+# Purge caches for Moodle to detect the new pack.
+php /var/www/html/admin/cli/purge_caches.php --lang
+EOF
 }
 
 case "${1:-}" in
@@ -69,6 +112,10 @@ xdebug)
 	;;
 install)
 	install_moodle_db
+	;;
+install-lang|install_lang)
+	shift
+	install_lang "$@"
 	;;
 psql)
 	shift
